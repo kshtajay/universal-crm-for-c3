@@ -112,7 +112,7 @@ async function logEmailEvent(
     lead_id: leadId ?? null,
     client_id: clientId,
     template_key: templateKey,
-    to_email: toEmail,
+    to_address: toEmail,
     status,
     error: error ?? null,
   })

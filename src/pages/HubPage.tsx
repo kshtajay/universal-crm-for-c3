@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useParams } from 'react-router-dom'
+import { Plus } from 'lucide-react'
+import { supabase } from '../integrations/supabase/client'
+import { NewLeadIntakePanel } from '../components/hub/NewLeadIntakePanel'
 
 export function HubPage() {
   const { slug } = useParams<{ slug: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(
-    searchParams.get('lead')
-  )
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(searchParams.get('lead'))
+  const [showIntake, setShowIntake] = useState(false)
+  const [clientId, setClientId] = useState<string | null>(null)
 
   const openLead = (leadId: string) => {
     setSelectedLeadId(leadId)
@@ -18,7 +21,7 @@ export function HubPage() {
     setSearchParams({})
   }
 
-  // Sync state when browser back button clears the ?lead= param
+  // Sync state with browser back button
   useEffect(() => {
     const leadParam = searchParams.get('lead')
     if (!leadParam && selectedLeadId) {
@@ -28,18 +31,35 @@ export function HubPage() {
     }
   }, [searchParams])
 
+  // Resolve client_id from slug for agent intake
+  useEffect(() => {
+    if (!slug) return
+    supabase
+      .from('clients')
+      .select('id')
+      .eq('slug', slug)
+      .single()
+      .then(({ data }) => { if (data) setClientId(data.id) })
+  }, [slug])
+
+  const handleLeadCreated = (leadId: string) => {
+    setShowIntake(false)
+    openLead(leadId)
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
       <header className="h-14 border-b border-border flex items-center px-4 gap-4">
-        <span className="font-bold text-gold-DEFAULT">{slug}</span>
+        <span className="font-bold text-primary">{slug}</span>
         <span className="text-muted-foreground text-sm">Command Center</span>
         <div className="ml-auto">
           <button
-            onClick={() => openLead('test-lead-id')}
-            className="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-lg font-semibold"
+            onClick={() => setShowIntake(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:opacity-90 transition-opacity"
           >
-            + New Lead
+            <Plus className="w-4 h-4" />
+            New Lead
           </button>
         </div>
       </header>
@@ -49,28 +69,44 @@ export function HubPage() {
         <aside className="w-56 border-r border-border p-4 hidden md:block">
           <nav className="space-y-1 text-sm">
             {['Pipeline', 'My Jobs', 'Calendar', 'Reports', 'Settings'].map(item => (
-              <div key={item} className="px-3 py-2 rounded-lg hover:bg-accent cursor-pointer text-muted-foreground hover:text-foreground">
+              <div
+                key={item}
+                className="px-3 py-2 rounded-lg hover:bg-accent cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+              >
                 {item}
               </div>
             ))}
           </nav>
         </aside>
 
-        {/* Main kanban area */}
+        {/* Main content */}
         <main className="flex-1 overflow-auto p-6">
           <p className="text-muted-foreground text-sm">
-            Kanban board — stages load from <code>workflow_stages</code> table.
+            Kanban board — stages load from <code>workflow_stages</code> table. (Phase 4)
           </p>
+
           {selectedLeadId && (
             <div className="mt-4 p-4 border border-border rounded-xl bg-card">
               <p className="text-sm font-mono text-primary">Lead: {selectedLeadId}</p>
-              <button onClick={closeLead} className="mt-2 text-xs text-muted-foreground hover:text-foreground">
+              <button
+                onClick={closeLead}
+                className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+              >
                 Close (Escape)
               </button>
             </div>
           )}
         </main>
       </div>
+
+      {/* New Lead intake panel */}
+      {showIntake && clientId && (
+        <NewLeadIntakePanel
+          clientId={clientId}
+          onClose={() => setShowIntake(false)}
+          onLeadCreated={handleLeadCreated}
+        />
+      )}
     </div>
   )
 }

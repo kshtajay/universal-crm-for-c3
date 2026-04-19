@@ -9,6 +9,32 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const redirectAfterLogin = async () => {
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .in('role', ['platform_admin', 'client_manager'])
+      .limit(1)
+
+    if (roles && roles.length > 0) {
+      navigate('/admin')
+      return
+    }
+
+    const { data: assignment } = await supabase
+      .from('client_user_assignments')
+      .select('client_id, clients(slug)')
+      .limit(1)
+      .single()
+
+    const slug = (assignment as any)?.clients?.slug
+    if (slug) {
+      navigate(`/${slug}/dashboard`)
+    } else {
+      navigate('/admin')
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -18,7 +44,7 @@ export function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
-      navigate('/admin')
+      await redirectAfterLogin()
     }
     setLoading(false)
   }

@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { HubPage } from '@/pages/HubPage'
+import { TenantDashboard } from '@/pages/TenantDashboard'
 import { AdminDashboard } from '@/pages/AdminDashboard'
 import { AdminClientView } from '@/pages/AdminClientView'
 import { AdminClientList } from '@/pages/AdminClientList'
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
   },
 
   // Tenant workspace routes
+  {
+    path: '/:slug/dashboard',
+    element: <ProtectedRoute><TenantDashboard /></ProtectedRoute>,
+  },
   {
     path: '/:slug/hub',
     element: <ProtectedRoute><HubPage /></ProtectedRoute>,

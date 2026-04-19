@@ -25,7 +25,7 @@ CREATE TABLE clients (
   slug text UNIQUE NOT NULL,
   company_name text NOT NULL,
   package_id uuid REFERENCES packages(id),
-  contractor_type_id uuid, -- FK added in migration 2 after contractor_types exists
+  contractor_type_id uuid,
   is_active boolean DEFAULT true,
   managed_by_ka boolean DEFAULT false,
   ka_project_manager_id uuid REFERENCES auth.users,

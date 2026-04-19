@@ -25,6 +25,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS push_subscriptions_endpoint_idx ON push_subscr
 
 -- ── contractor_type_config: add RLS (was missing) ─────────────────────────────
 ALTER TABLE contractor_type_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS select_ctc ON contractor_type_config FOR SELECT USING (can_access_client(client_id));
-CREATE POLICY IF NOT EXISTS insert_ctc ON contractor_type_config FOR INSERT WITH CHECK (can_access_client(client_id));
-CREATE POLICY IF NOT EXISTS update_ctc ON contractor_type_config FOR UPDATE USING (can_access_client(client_id)) WITH CHECK (can_access_client(client_id));
+CREATE POLICY select_ctc ON contractor_type_config FOR SELECT USING (can_access_client(client_id));
+CREATE POLICY insert_ctc ON contractor_type_config FOR INSERT WITH CHECK (can_access_client(client_id));
+CREATE POLICY update_ctc ON contractor_type_config FOR UPDATE USING (can_access_client(client_id)) WITH CHECK (can_access_client(client_id));

@@ -187,6 +187,6 @@ CREATE POLICY delete_aa ON automation_actions FOR DELETE
 ALTER TABLE automation_runs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY insert_ar ON automation_runs FOR INSERT WITH CHECK (true);
 CREATE POLICY select_ar ON automation_runs FOR SELECT USING (
-  lead_id IN (SELECT id FROM leads WHERE can_access_client(client_id))
+  automation_id IN (SELECT id FROM workflow_automations WHERE can_access_client(client_id))
   OR has_platform_role('platform_admin')
 );

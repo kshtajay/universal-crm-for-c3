@@ -27,13 +27,13 @@ export function useClientContext(slug: string | undefined): ClientContext {
 
     supabase
       .from('clients')
-      .select('id, company_name, contractor_types(type_key)')
+      .select('id, company_name, contractor_types(key)')
       .eq('slug', slug)
       .single()
       .then(({ data }) => {
         const result: ClientContext = {
           clientId: data?.id ?? null,
-          contractorType: (data?.contractor_types as any)?.type_key ?? null,
+          contractorType: (data?.contractor_types as any)?.key ?? null,
           companyName: data?.company_name ?? null,
           loading: false,
         }

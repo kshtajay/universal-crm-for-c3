@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useParams } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Plus, Bell, BellOff } from 'lucide-react'
 import { useClientContext } from '../hooks/useClientContext'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 import { KanbanBoard } from '../components/kanban/KanbanBoard'
 import { JobWorkspaceModal } from '../components/workspace/JobWorkspaceModal'
 import { NewLeadIntakePanel } from '../components/hub/NewLeadIntakePanel'
+import { supabase } from '../integrations/supabase/client'
 
 export function HubPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -13,6 +15,11 @@ export function HubPage() {
   const [showIntake, setShowIntake] = useState(false)
 
   const { clientId, contractorType, loading: ctxLoading } = useClientContext(slug)
+  const [userId, setUserId] = useState<string | null>(null)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+  }, [])
+  const { permission, subscribed, subscribe, unsubscribe } = usePushNotifications(clientId, userId)
 
   const openLead = (leadId: string) => {
     setSelectedLeadId(leadId)
@@ -51,6 +58,17 @@ export function HubPage() {
             <Plus className="w-4 h-4" />
             New Lead
           </button>
+
+          {/* Push notification toggle */}
+          {permission !== 'unsupported' && permission !== 'denied' && (
+            <button
+              onClick={subscribed ? unsubscribe : subscribe}
+              title={subscribed ? 'Disable push notifications' : 'Enable push notifications'}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              {subscribed ? <Bell className="w-4 h-4 text-primary" /> : <BellOff className="w-4 h-4" />}
+            </button>
+          )}
         </div>
       </header>
 

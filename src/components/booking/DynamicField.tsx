@@ -1,3 +1,5 @@
+import { AddressAutocomplete } from './AddressAutocomplete'
+
 export interface FieldDef {
   field_key: string
   field_label: string
@@ -110,6 +112,20 @@ export function DynamicField({ field, value, onChange, primaryColor = '#F5C542' 
           value={value}
           onChange={e => onChange(field.field_key, e.target.value)}
           required={field.required}
+        />
+      )
+
+    case 'address':
+      return (
+        <AddressAutocomplete
+          value={value}
+          placeholder={field.placeholder ?? '123 Main St'}
+          required={field.required}
+          onChange={(addr, lat, lng) => {
+            onChange(field.field_key, addr)
+            if (lat !== undefined) onChange('property_lat', String(lat))
+            if (lng !== undefined) onChange('property_lng', String(lng))
+          }}
         />
       )
 

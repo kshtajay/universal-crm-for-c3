@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { X, Sparkles, Loader2 } from 'lucide-react'
 import { supabase } from '../../integrations/supabase/client'
+import { AddressAutocomplete } from '../booking/AddressAutocomplete'
 
 interface Props {
   clientId: string
@@ -113,7 +114,7 @@ export function NewLeadIntakePanel({ clientId, onClose, onLeadCreated }: Props) 
     { key: 'full_name', label: 'Full Name' },
     { key: 'phone', label: 'Phone', type: 'tel' },
     { key: 'email', label: 'Email', type: 'email' },
-    { key: 'property_address', label: 'Address' },
+    { key: 'property_address', label: 'Address', type: 'address' },
     { key: 'project_type', label: 'Project Type' },
     { key: 'preferred_date', label: 'Preferred Date', type: 'date' },
     { key: 'urgency', label: 'Urgency' },
@@ -172,12 +173,23 @@ export function NewLeadIntakePanel({ clientId, onClose, onLeadCreated }: Props) 
             {DISPLAY_FIELDS.map(({ key, label, type = 'text' }) => (
               <div key={key} className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-muted-foreground">{label}</label>
-                <input
-                  type={type}
-                  className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={String(fields[key] ?? '')}
-                  onChange={e => handleFieldChange(key, e.target.value)}
-                />
+                {type === 'address' ? (
+                  <AddressAutocomplete
+                    value={String(fields[key] ?? '')}
+                    onChange={(addr, lat, lng) => {
+                      handleFieldChange(key, addr)
+                      if (lat !== undefined) handleFieldChange('property_lat', String(lat))
+                      if (lng !== undefined) handleFieldChange('property_lng', String(lng))
+                    }}
+                  />
+                ) : (
+                  <input
+                    type={type}
+                    className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={String(fields[key] ?? '')}
+                    onChange={e => handleFieldChange(key, e.target.value)}
+                  />
+                )}
               </div>
             ))}
           </form>

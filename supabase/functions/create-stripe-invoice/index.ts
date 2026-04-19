@@ -105,22 +105,22 @@ Deno.serve(async (req) => {
     .from('invoices')
     .select('id')
     .eq('lead_id', lead_id)
-    .eq('invoice_type', type)
+    .eq('type', type)
     .single()
 
   if (existingInvoice) {
     await supabase
       .from('invoices')
-      .update({ stripe_invoice_id: finalized.id, payment_url: paymentUrl, status: 'sent' })
+      .update({ stripe_invoice_id: finalized.id, stripe_payment_url: paymentUrl, status: 'sent' })
       .eq('id', existingInvoice.id)
   } else {
     await supabase.from('invoices').insert({
       lead_id,
       client_id,
-      invoice_type: type,
+      type,
       amount: amountCents / 100,
       stripe_invoice_id: finalized.id,
-      payment_url: paymentUrl,
+      stripe_payment_url: paymentUrl,
       status: 'sent',
     })
   }

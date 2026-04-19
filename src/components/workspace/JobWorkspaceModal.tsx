@@ -5,6 +5,7 @@ import { OverviewTab } from './tabs/OverviewTab'
 import { IntakeTab } from './tabs/IntakeTab'
 import { TasksTab } from './tabs/TasksTab'
 import { WeatherTab } from './tabs/WeatherTab'
+import { MaterialsTab } from './tabs/MaterialsTab'
 import { StubTab } from './tabs/StubTab'
 
 interface WorkspaceTab {
@@ -77,6 +78,7 @@ export function JobWorkspaceModal({ leadId, clientId, contractorType, onClose }:
       case 'intake': return <IntakeTab leadId={leadId} />
       case 'tasks': return <TasksTab leadId={leadId} clientId={clientId} />
       case 'weather': return <WeatherTab leadId={leadId} />
+      case 'materials': return <MaterialsTab leadId={leadId} clientId={clientId} />
       default: {
         const tab = tabs.find(t => t.tab_key === activeTab)
         return <StubTab label={tab?.label ?? activeTab} />

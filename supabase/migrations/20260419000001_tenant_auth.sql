@@ -1,7 +1,7 @@
 -- Migration 1: Tenant & Auth (§7.1)
--- Order is critical: packages → user_roles → RLS helpers → tables → policies
+-- Order: tables first → helper functions → policies (SQL functions validate table refs at creation)
 
--- ── packages (clients FKs to this) ──────────────────────────────────────────
+-- ── packages ──────────────────────────────────────────────────────────────────
 CREATE TABLE packages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE packages (
   created_at timestamptz DEFAULT now()
 );
 
--- ── user_roles (has_platform_role() queries this — must exist before the function) ──
+-- ── user_roles ────────────────────────────────────────────────────────────────
 CREATE TABLE user_roles (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL,
@@ -19,25 +19,7 @@ CREATE TABLE user_roles (
 );
 CREATE INDEX user_roles_user_id_idx ON user_roles(user_id);
 
--- ── RLS helper functions (must exist before any CREATE POLICY) ───────────────
-CREATE OR REPLACE FUNCTION get_my_client_id()
-RETURNS uuid LANGUAGE sql SECURITY DEFINER STABLE AS $$
-  SELECT client_id FROM client_user_assignments WHERE user_id = auth.uid() LIMIT 1
-$$;
-
-CREATE OR REPLACE FUNCTION has_platform_role(r text)
-RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
-  SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = r)
-$$;
-
-CREATE OR REPLACE FUNCTION can_access_client(cid uuid)
-RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
-  SELECT has_platform_role('platform_admin')
-      OR has_platform_role('client_manager')
-      OR get_my_client_id() = cid
-$$;
-
--- ── Core tenant tables ────────────────────────────────────────────────────────
+-- ── Core tenant tables (must exist before helper functions reference them) ────
 CREATE TABLE clients (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug text UNIQUE NOT NULL,
@@ -70,6 +52,24 @@ CREATE TABLE client_user_assignments (
   created_at timestamptz DEFAULT now(),
   UNIQUE(user_id, client_id)
 );
+
+-- ── RLS helper functions (tables above must exist first for SQL-language validation) ──
+CREATE OR REPLACE FUNCTION get_my_client_id()
+RETURNS uuid LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT client_id FROM client_user_assignments WHERE user_id = auth.uid() LIMIT 1
+$$;
+
+CREATE OR REPLACE FUNCTION has_platform_role(r text)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS(SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = r)
+$$;
+
+CREATE OR REPLACE FUNCTION can_access_client(cid uuid)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT has_platform_role('platform_admin')
+      OR has_platform_role('client_manager')
+      OR get_my_client_id() = cid
+$$;
 
 -- ── RLS ───────────────────────────────────────────────────────────────────────
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;

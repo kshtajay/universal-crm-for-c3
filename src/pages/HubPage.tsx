@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { supabase } from '../integrations/supabase/client'
+import { useClientContext } from '../hooks/useClientContext'
+import { KanbanBoard } from '../components/kanban/KanbanBoard'
+import { JobWorkspaceModal } from '../components/workspace/JobWorkspaceModal'
 import { NewLeadIntakePanel } from '../components/hub/NewLeadIntakePanel'
 
 export function HubPage() {
@@ -9,7 +11,8 @@ export function HubPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(searchParams.get('lead'))
   const [showIntake, setShowIntake] = useState(false)
-  const [clientId, setClientId] = useState<string | null>(null)
+
+  const { clientId, contractorType, loading: ctxLoading } = useClientContext(slug)
 
   const openLead = (leadId: string) => {
     setSelectedLeadId(leadId)
@@ -21,26 +24,12 @@ export function HubPage() {
     setSearchParams({})
   }
 
-  // Sync state with browser back button
+  // Sync with browser back button
   useEffect(() => {
     const leadParam = searchParams.get('lead')
-    if (!leadParam && selectedLeadId) {
-      setSelectedLeadId(null)
-    } else if (leadParam && leadParam !== selectedLeadId) {
-      setSelectedLeadId(leadParam)
-    }
+    if (!leadParam && selectedLeadId) setSelectedLeadId(null)
+    else if (leadParam && leadParam !== selectedLeadId) setSelectedLeadId(leadParam)
   }, [searchParams])
-
-  // Resolve client_id from slug for agent intake
-  useEffect(() => {
-    if (!slug) return
-    supabase
-      .from('clients')
-      .select('id')
-      .eq('slug', slug)
-      .single()
-      .then(({ data }) => { if (data) setClientId(data.id) })
-  }, [slug])
 
   const handleLeadCreated = (leadId: string) => {
     setShowIntake(false)
@@ -48,15 +37,16 @@ export function HubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Top bar */}
-      <header className="h-14 border-b border-border flex items-center px-4 gap-4">
+      <header className="h-14 border-b border-border flex items-center px-4 gap-4 shrink-0">
         <span className="font-bold text-primary">{slug}</span>
-        <span className="text-muted-foreground text-sm">Command Center</span>
+        <span className="text-muted-foreground text-sm hidden sm:block">Command Center</span>
         <div className="ml-auto">
           <button
             onClick={() => setShowIntake(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:opacity-90 transition-opacity"
+            disabled={ctxLoading || !clientId}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             <Plus className="w-4 h-4" />
             New Lead
@@ -64,40 +54,58 @@ export function HubPage() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-56px)]">
+      <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
-        <aside className="w-56 border-r border-border p-4 hidden md:block">
-          <nav className="space-y-1 text-sm">
-            {['Pipeline', 'My Jobs', 'Calendar', 'Reports', 'Settings'].map(item => (
+        <aside className="w-52 border-r border-border p-3 hidden md:flex flex-col shrink-0">
+          <nav className="space-y-0.5 text-sm">
+            {[
+              { label: 'Pipeline', active: true },
+              { label: 'My Jobs', active: false },
+              { label: 'Calendar', active: false },
+              { label: 'Reports', active: false },
+              { label: 'Settings', active: false },
+            ].map(({ label, active }) => (
               <div
-                key={item}
-                className="px-3 py-2 rounded-lg hover:bg-accent cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+                key={label}
+                className={`px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
+                  active
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                }`}
               >
-                {item}
+                {label}
               </div>
             ))}
           </nav>
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-auto p-6">
-          <p className="text-muted-foreground text-sm">
-            Kanban board — stages load from <code>workflow_stages</code> table. (Phase 4)
-          </p>
-
-          {selectedLeadId && (
-            <div className="mt-4 p-4 border border-border rounded-xl bg-card">
-              <p className="text-sm font-mono text-primary">Lead: {selectedLeadId}</p>
-              <button
-                onClick={closeLead}
-                className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Close (Escape)
-              </button>
+        {/* Kanban */}
+        <main className="flex-1 overflow-auto">
+          {ctxLoading && (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          {!ctxLoading && clientId && (
+            <KanbanBoard clientId={clientId} onLeadClick={openLead} />
+          )}
+          {!ctxLoading && !clientId && (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              Client not found for slug "{slug}"
             </div>
           )}
         </main>
       </div>
+
+      {/* Job Workspace Modal */}
+      {selectedLeadId && clientId && (
+        <JobWorkspaceModal
+          leadId={selectedLeadId}
+          clientId={clientId}
+          contractorType={contractorType}
+          onClose={closeLead}
+        />
+      )}
 
       {/* New Lead intake panel */}
       {showIntake && clientId && (

@@ -6,6 +6,16 @@ import { IntakeTab } from './tabs/IntakeTab'
 import { TasksTab } from './tabs/TasksTab'
 import { WeatherTab } from './tabs/WeatherTab'
 import { MaterialsTab } from './tabs/MaterialsTab'
+import { EstimateTab } from './tabs/EstimateTab'
+import { ContractTab } from './tabs/ContractTab'
+import { InvoiceTab } from './tabs/InvoiceTab'
+import { FilesTab } from './tabs/FilesTab'
+import { NotesTab } from './tabs/NotesTab'
+import { DailyLogsTab } from './tabs/DailyLogsTab'
+import { PermitTab } from './tabs/PermitTab'
+import { DrawScheduleTab } from './tabs/DrawScheduleTab'
+import { ChangeOrderTab } from './tabs/ChangeOrderTab'
+import { PortalPreviewTab } from './tabs/PortalPreviewTab'
 import { StubTab } from './tabs/StubTab'
 
 interface WorkspaceTab {
@@ -31,7 +41,8 @@ const DEFAULT_TABS: WorkspaceTab[] = [
   { tab_key: 'tasks', label: 'Tasks', display_order: 6, visible_for_types: [] },
   { tab_key: 'files', label: 'Files', display_order: 7, visible_for_types: [] },
   { tab_key: 'notes', label: 'Notes', display_order: 8, visible_for_types: [] },
-  { tab_key: 'communication', label: 'Communication', display_order: 9, visible_for_types: [] },
+  { tab_key: 'daily_logs', label: 'Daily Logs', display_order: 9, visible_for_types: [] },
+  { tab_key: 'portal', label: 'Portal', display_order: 10, visible_for_types: [] },
 ]
 
 export function JobWorkspaceModal({ leadId, clientId, contractorType, onClose }: Props) {
@@ -74,11 +85,21 @@ export function JobWorkspaceModal({ leadId, clientId, contractorType, onClose }:
 
   const renderTab = useCallback(() => {
     switch (activeTab) {
-      case 'overview': return <OverviewTab leadId={leadId} />
-      case 'intake': return <IntakeTab leadId={leadId} />
-      case 'tasks': return <TasksTab leadId={leadId} clientId={clientId} />
-      case 'weather': return <WeatherTab leadId={leadId} />
-      case 'materials': return <MaterialsTab leadId={leadId} clientId={clientId} />
+      case 'overview':     return <OverviewTab leadId={leadId} />
+      case 'intake':       return <IntakeTab leadId={leadId} />
+      case 'estimate':     return <EstimateTab leadId={leadId} clientId={clientId} />
+      case 'contract':     return <ContractTab leadId={leadId} clientId={clientId} />
+      case 'invoice':      return <InvoiceTab leadId={leadId} clientId={clientId} />
+      case 'tasks':        return <TasksTab leadId={leadId} clientId={clientId} />
+      case 'files':        return <FilesTab leadId={leadId} clientId={clientId} />
+      case 'notes':        return <NotesTab leadId={leadId} clientId={clientId} />
+      case 'daily_logs':   return <DailyLogsTab leadId={leadId} clientId={clientId} />
+      case 'permits':      return <PermitTab leadId={leadId} clientId={clientId} />
+      case 'draw_schedule':return <DrawScheduleTab leadId={leadId} clientId={clientId} />
+      case 'change_orders':return <ChangeOrderTab leadId={leadId} clientId={clientId} />
+      case 'weather':      return <WeatherTab leadId={leadId} />
+      case 'materials':    return <MaterialsTab leadId={leadId} clientId={clientId} />
+      case 'portal':       return <PortalPreviewTab leadId={leadId} clientId={clientId} />
       default: {
         const tab = tabs.find(t => t.tab_key === activeTab)
         return <StubTab label={tab?.label ?? activeTab} />
